@@ -11,6 +11,7 @@ export function MediaPlayer({ url, type }: Props) {
   const [muted, setMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -24,6 +25,12 @@ export function MediaPlayer({ url, type }: Props) {
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLMediaElement>) => {
     setDuration(e.currentTarget.duration);
+    setError(null);
+  };
+
+  const handleError = (e: React.SyntheticEvent<HTMLMediaElement>) => {
+    console.error('Media error:', e.currentTarget.error);
+    setError('Error loading media. Please try again.');
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +48,12 @@ export function MediaPlayer({ url, type }: Props) {
       if (playing) {
         mediaElement.pause();
       } else {
-        mediaElement.play();
+        // Reset error state when trying to play
+        setError(null);
+        mediaElement.play().catch(err => {
+          console.error('Playback error:', err);
+          setError('Error playing media. Please try again.');
+        });
       }
       setPlaying(!playing);
     }
@@ -55,24 +67,63 @@ export function MediaPlayer({ url, type }: Props) {
     }
   };
 
+  useEffect(() => {
+    const mediaElement = document.getElementById('media-player') as HTMLMediaElement;
+    if (mediaElement) {
+      const handlePlay = () => setPlaying(true);
+      const handlePause = () => setPlaying(false);
+      
+      mediaElement.addEventListener('play', handlePlay);
+      mediaElement.addEventListener('pause', handlePause);
+      
+      return () => {
+        mediaElement.removeEventListener('play', handlePlay);
+        mediaElement.removeEventListener('pause', handlePause);
+      };
+    }
+  }, []);
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+      
       {type === 'video' ? (
         <video
           id="media-player"
-          src={url}
           className="w-full rounded-lg"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-        />
+          onError={handleError}
+          controls
+          playsInline
+          preload="metadata"
+          muted={muted}
+          crossOrigin="anonymous"
+        >
+          <source src={url} type="video/mp4" />
+          <source src={url} type="video/webm" />
+          Your browser does not support the video tag.
+        </video>
       ) : (
         <audio
           id="media-player"
-          src={url}
           className="hidden"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-        />
+          onError={handleError}
+          controls
+          preload="metadata"
+          muted={muted}
+          crossOrigin="anonymous"
+        >
+          <source src={url} type="audio/mpeg" />
+          <source src={url} type="audio/ogg" />
+          Your browser does not support the audio tag.
+        </audio>
       )}
 
       <div className="mt-4 space-y-2">
