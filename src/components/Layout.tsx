@@ -28,7 +28,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex justify-between h-16">
             <div className="flex">
               <Link to="/" className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-primary">Nebelu</span>
+                <img 
+                  src="/nebelu-logo.svg" 
+                  alt="Nebelu Logo" 
+                  className="h-8 w-auto"
+                  onError={(e) => {
+                    // Fallback if PNG fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/nebelu-logo.svg";
+                  }}
+                />
               </Link>
             </div>
             <div className="flex items-center space-x-4">
