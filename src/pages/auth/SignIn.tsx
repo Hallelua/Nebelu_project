@@ -41,13 +41,13 @@ export function SignIn() {
         <div>
           <div className="flex justify-center">
             <img 
-              src="/nebelu-logo.png" 
+              src="/nebelu-logo.svg" 
               alt="Nebelu Logo" 
               className="h-12 w-auto"
               onError={(e) => {
                 // Fallback if PNG fails to load
                 const target = e.target as HTMLImageElement;
-                target.src = "/nebelu-logo.png";
+                target.src = "/nebelu-logo.svg";
               }}
             />
           </div>
