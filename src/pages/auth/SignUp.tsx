@@ -52,7 +52,16 @@ export function SignUp() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <UserPlus className="h-12 w-12 text-primary" />
+            <img 
+              src="/nebelu-logo.svg" 
+              alt="Nebelu Logo" 
+              className="h-12 w-auto"
+              onError={(e) => {
+                // Fallback if PNG fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = "/nebelu-logo.svg";
+              }}
+            />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
