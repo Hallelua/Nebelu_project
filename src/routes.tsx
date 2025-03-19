@@ -7,6 +7,7 @@ import { NewPost } from './pages/NewPost';
 import { PostView } from './pages/PostView';
 import { EditPost } from './pages/EditPost';
 import { Dashboard } from './pages/Dashboard';
+import { LandingPage } from './pages/LandingPage';
 
 export function AppRoutes() {
   const { user, loading } = useAuth();
@@ -21,8 +22,9 @@ export function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route
-        path="/"
+        path="/home"
         element={user ? <Home /> : <Navigate to="/signin" replace />}
       />
       <Route
@@ -49,7 +51,6 @@ export function AppRoutes() {
         path="/posts/:id/edit"
         element={user ? <EditPost /> : <Navigate to="/signin" replace />}
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
