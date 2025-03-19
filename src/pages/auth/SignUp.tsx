@@ -14,7 +14,7 @@ export function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -37,7 +37,7 @@ export function SignUp() {
 
       if (data.user) {
         toast.success('Account created successfully!');
-        navigate('/');
+        navigate('/home');
       }
     } catch (error: any) {
       toast.error(error.message || 'Error signing up');
