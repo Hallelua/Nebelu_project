@@ -12,7 +12,7 @@ export function SignIn() {
   const [password, setPassword] = useState('');
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
