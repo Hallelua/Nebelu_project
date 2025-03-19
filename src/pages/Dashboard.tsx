@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { supabase } from '../lib/supabase';
-import { Download, Loader } from 'lucide-react';
+import { Download, Loader, Share } from 'lucide-react';
 import type { Post, MediaClip } from '../types';
 import { MediaPlayer } from '../components/MediaPlayer';
 import { format } from 'date-fns';
 import { getFFmpeg } from '../lib/ffmpeg';
+import { toast } from 'sonner';
 
 export function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -13,6 +14,8 @@ export function Dashboard() {
   const [mediaClips, setMediaClips] = useState<MediaClip[]>([]);
   const [merging, setMerging] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mergedVideoUrl, setMergedVideoUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     const fetchUserPosts = async () => {
@@ -47,6 +50,7 @@ export function Dashboard() {
       if (error) throw error;
       setMediaClips(data || []);
       setSelectedPost(posts.find(p => p.id === postId) || null);
+      setMergedVideoUrl(null); // Reset merged video URL when switching posts
     } catch (error) {
       console.error('Error fetching media clips:', error);
     }
@@ -85,18 +89,19 @@ export function Dashboard() {
         'output.mp4'
       );
 
-      // Download merged file
+      // Get merged file
       const data = ffmpeg.FS('readFile', 'output.mp4');
       const blob = new Blob([data.buffer], { type: 'video/mp4' });
       const url = URL.createObjectURL(blob);
-      
+      setMergedVideoUrl(url);
+
+      // Download merged file
       const a = document.createElement('a');
       a.href = url;
       a.download = `merged_${selectedPost?.title || 'video'}.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
 
       // Clean up FFmpeg files
       ['concat.txt', 'output.mp4', ...mediaClips.map((_, i) => `clip${i}.mp4`)].forEach(file => {
@@ -108,8 +113,54 @@ export function Dashboard() {
       });
     } catch (error) {
       console.error('Error merging clips:', error);
+      toast.error('Error merging clips');
     } finally {
       setMerging(false);
+    }
+  };
+
+  const shareToPublic = async () => {
+    if (!mergedVideoUrl || !selectedPost) return;
+    setSharing(true);
+
+    try {
+      // Upload to Supabase storage
+      const timestamp = new Date().getTime();
+      const fileName = `public/${timestamp}-${selectedPost.title.toLowerCase().replace(/\s+/g, '-')}.mp4`;
+
+      const response = await fetch(mergedVideoUrl);
+      const blob = await response.blob();
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, blob, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(fileName);
+
+      // Create public video record
+      const { error: dbError } = await supabase.from('public_videos').insert({
+        title: selectedPost.title,
+        url: publicUrl,
+        duration: mediaClips.reduce((total, clip) => total + clip.duration, 0),
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+      });
+
+      if (dbError) throw dbError;
+
+      toast.success('Video shared to public page successfully!');
+    } catch (error) {
+      console.error('Error sharing video:', error);
+      toast.error('Error sharing video to public page');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -161,26 +212,54 @@ export function Dashboard() {
                   <h2 className="text-lg font-semibold text-gray-900">
                     Media Clips for "{selectedPost.title}"
                   </h2>
-                  {mediaClips.length > 0 && (
-                    <button
-                      onClick={mergeClips}
-                      disabled={merging}
-                      className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-                    >
-                      {merging ? (
-                        <>
-                          <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                          Merging clips...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="-ml-1 mr-2 h-5 w-5" />
-                          Merge & Download
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <div className="flex items-center space-x-4">
+                    {mediaClips.length > 0 && !mergedVideoUrl && (
+                      <button
+                        onClick={mergeClips}
+                        disabled={merging}
+                        className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                      >
+                        {merging ? (
+                          <>
+                            <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                            Merging clips...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="-ml-1 mr-2 h-5 w-5" />
+                            Merge & Download
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {mergedVideoUrl && (
+                      <button
+                        onClick={shareToPublic}
+                        disabled={sharing}
+                        className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                      >
+                        {sharing ? (
+                          <>
+                            <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                            Sharing...
+                          </>
+                        ) : (
+                          <>
+                            <Share className="-ml-1 mr-2 h-5 w-5" />
+                            Share to Public Page
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {mergedVideoUrl && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Merged Video Preview</h3>
+                    <MediaPlayer url={mergedVideoUrl} type="video" />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {mediaClips.map((clip) => (
