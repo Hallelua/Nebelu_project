@@ -14,7 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      navigate('/signin');
+      navigate('/');
     } catch (error) {
       toast.error('Error signing out');
       console.error('Error signing out:', error);
@@ -27,7 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
-              <Link to="/" className="flex-shrink-0 flex items-center">
+              <Link to="/home" className="flex-shrink-0 flex items-center">
                 <img 
                   src="/nebelu-logo.svg" 
                   alt="Nebelu Logo" 
