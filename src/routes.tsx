@@ -8,6 +8,9 @@ import { PostView } from './pages/PostView';
 import { EditPost } from './pages/EditPost';
 import { Dashboard } from './pages/Dashboard';
 import { LandingPage } from './pages/LandingPage';
+import { PhotoStories } from './pages/PhotoStories';
+import { NewPhotoStory } from './pages/NewPhotoStory';
+import { StoryView } from './pages/StoryView';
 
 export function AppRoutes() {
   const { user, loading } = useAuth();
@@ -38,6 +41,18 @@ export function AppRoutes() {
       <Route
         path="/dashboard"
         element={user ? <Dashboard /> : <Navigate to="/signin" replace />}
+      />
+      <Route
+        path="/stories"
+        element={user ? <PhotoStories /> : <Navigate to="/signin" replace />}
+      />
+      <Route
+        path="/stories/new"
+        element={user ? <NewPhotoStory /> : <Navigate to="/signin" replace />}
+      />
+      <Route
+        path="/s/:id"
+        element={<StoryView />}
       />
       <Route
         path="/new"
