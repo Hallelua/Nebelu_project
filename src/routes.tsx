@@ -11,6 +11,7 @@ import { LandingPage } from './pages/LandingPage';
 import { PhotoStories } from './pages/PhotoStories';
 import { NewPhotoStory } from './pages/NewPhotoStory';
 import { StoryView } from './pages/StoryView';
+import { UploadedVideos } from './pages/UploadedVideos';
 
 export function AppRoutes() {
   const { user, loading } = useAuth();
@@ -41,6 +42,10 @@ export function AppRoutes() {
       <Route
         path="/dashboard"
         element={user ? <Dashboard /> : <Navigate to="/signin" replace />}
+      />
+      <Route
+        path="/uploaded-videos"
+        element={user ? <UploadedVideos /> : <Navigate to="/signin" replace />}
       />
       <Route
         path="/stories"
