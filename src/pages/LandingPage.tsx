@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, LogIn, UserPlus, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { MediaPlayer } from '../components/MediaPlayer';
@@ -14,6 +14,7 @@ type PublicVideo = {
   duration: number;
   views: number;
   created_at: string;
+  public_url_id: string;
 };
 
 type PhotoStory = {
@@ -29,14 +30,35 @@ type PhotoStory = {
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const videoId = searchParams.get('v');
   const [videos, setVideos] = useState<PublicVideo[]>([]);
   const [stories, setStories] = useState<PhotoStory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [featuredVideo, setFeaturedVideo] = useState<PublicVideo | null>(null);
 
   useEffect(() => {
     async function fetchContent() {
       try {
+        // If there's a video ID in the URL, fetch that video first
+        if (videoId) {
+          const { data: videoData } = await supabase
+            .from('public_videos')
+            .select('*')
+            .eq('public_url_id', videoId)
+            .single();
+
+          if (videoData) {
+            setFeaturedVideo(videoData);
+            // Increment view count
+            await supabase
+              .from('public_videos')
+              .update({ views: videoData.views + 1 })
+              .eq('id', videoData.id);
+          }
+        }
+
         // Fetch videos
         const videoQuery = supabase
           .from('public_videos')
@@ -45,6 +67,10 @@ export function LandingPage() {
 
         if (searchQuery) {
           videoQuery.ilike('title', `%${searchQuery}%`);
+        }
+
+        if (videoId) {
+          videoQuery.neq('public_url_id', videoId);
         }
 
         const { data: videoData, error: videoError } = await videoQuery;
@@ -85,7 +111,7 @@ export function LandingPage() {
     }
 
     fetchContent();
-  }, [searchQuery]);
+  }, [searchQuery, videoId]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,14 +147,35 @@ export function LandingPage() {
 
       <main>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Welcome to Nebelu
-            </h1>
-            <p className="text-xl text-gray-600">
-              Discover and share amazing videos and stories
-            </p>
-          </div>
+          {!videoId && (
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Welcome to Nebelu
+              </h1>
+              <p className="text-xl text-gray-600">
+                Discover and share amazing videos and stories
+              </p>
+            </div>
+          )}
+
+          {featuredVideo && (
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Video</h2>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <MediaPlayer url={featuredVideo.url} type="video" />
+                <div className="p-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {featuredVideo.title}
+                  </h3>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <span>{featuredVideo.views} views</span>
+                    <span className="mx-2">•</span>
+                    <span>{format(new Date(featuredVideo.created_at), 'PPp')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Photo Stories Section */}
           {stories.length > 0 && (
