@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, PlusCircle, LayoutDashboard, Camera } from 'lucide-react';
+import { LogOut, PlusCircle, LayoutDashboard, Camera, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/auth';
@@ -40,6 +40,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
+              <Link
+                to="/uploaded-videos"
+                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                  location.pathname === '/uploaded-videos'
+                    ? 'text-primary bg-primary/5'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Uploaded Videos
+              </Link>
               <Link
                 to="/dashboard"
                 className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
