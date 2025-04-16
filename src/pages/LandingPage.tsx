@@ -168,7 +168,7 @@ export function LandingPage() {
                     {featuredVideo.title}
                   </h3>
                   <div className="flex items-center text-sm text-gray-500">
-                    <span>{featuredVideo.views} views</span>
+                    {/*<span>{featuredVideo.views} views</span>*/}
                     <span className="mx-2">•</span>
                     <span>{format(new Date(featuredVideo.created_at), 'PPp')}</span>
                   </div>
