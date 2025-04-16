@@ -54,7 +54,7 @@ export function LandingPage() {
             // Increment view count
             await supabase
               .from('public_videos')
-              .update({ views: videoData.views + 1 })
+              .update({ views: videoData.views + 50 })
               .eq('id', videoData.id);
           }
         }
